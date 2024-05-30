@@ -1840,39 +1840,42 @@ spec:
 			input: `apiVersion: v1
 kind: ConfigMap
 metadata:
-name: target-configmap
+  name: target-configmap
 data:
-config.json: |-
-{
-  "config": {
-    "id": "42",
-    "hostname": "REPLACE_TARGET_HOSTNAME"
-  }
-}
+  config.json: |-
+    {
+      "config": {
+        "id": "42",
+        "hostname": "REPLACE_TARGET_HOSTNAME"
+      }
+    }
 `,
 			replacements: `replacements:
 - source:
-kind: ConfigMap
-name: target-configmap
-fieldPath: metadata.name
-targets:
-- select:
-  kind: ConfigMap
-fieldPaths:
-- data.config\.json.config.hostname
+    kind: ConfigMap
+    name: target-configmap
+    fieldPath: metadata.name
+  targets:
+  - select:
+      kind: ConfigMap
+    fieldPaths:
+    - data.config\.json
+    options:
+      format: 'json'
+      formatPath: '/config/hostname'
 `,
 			expected: `apiVersion: v1
 kind: ConfigMap
 metadata:
-name: target-configmap
+  name: target-configmap
 data:
-config.json: |-
-{
-  "config": {
-    "id": "42",
-    "hostname": "target-configmap"
-  }
-}`,
+  config.json: |-
+    {
+      "config": {
+        "hostname": "target-configmap",
+        "id": "42"
+      }
+    }`,
 		},
 		"multiple field paths in target": {
 			input: `apiVersion: v1

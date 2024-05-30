@@ -93,36 +93,55 @@ func selectSourceNode(nodes []*yaml.RNode, selector *types.SourceSelector) (*yam
 }
 
 func getRefinedValue(options *types.FieldOptions, rn *yaml.RNode) (*yaml.RNode, error) {
-	if options == nil || options.Delimiter == "" {
+	if options == nil {
 		return rn, nil
 	}
+
 	if rn.YNode().Kind != yaml.ScalarNode {
 		return nil, fmt.Errorf("delimiter option can only be used with scalar nodes")
 	}
-	value := []string{}
-	if options.EndDelimiter == "" {
-		value = strings.Split(yaml.GetValue(rn), options.Delimiter)
-	} else {
-		mapper := func(s string) string {
-			s = strings.ReplaceAll(s, options.Delimiter, "")
-			s = strings.ReplaceAll(s, options.EndDelimiter, "")
-			return s
-		}
-		if options.Delimiter == "" {
-			return nil, fmt.Errorf("delimiter needs to be set if enddelimiter is set")
-		}
-		re := regexp.MustCompile(regexp.QuoteMeta(options.Delimiter) + `(.*?)` + regexp.QuoteMeta(options.EndDelimiter))
-		dv := re.FindAllString(yaml.GetValue(rn), -1)
-		for _, s := range dv {
-			value = append(value, mapper(s))
-		}
+
+	if options.Format == "" && options.Delimiter != "" {
+		options.Format = "delimiter"
 	}
-	if options.Index >= len(value) || options.Index < 0 {
-		return nil, fmt.Errorf("options.index %d is out of bounds for value %s", options.Index, yaml.GetValue(rn))
+
+	switch options.Format {
+	case "delimiter":
+		var value []string
+		if options.EndDelimiter == "" {
+			value = strings.Split(yaml.GetValue(rn), options.Delimiter)
+		} else {
+			mapper := func(s string) string {
+				s = strings.ReplaceAll(s, options.Delimiter, "")
+				s = strings.ReplaceAll(s, options.EndDelimiter, "")
+				return s
+			}
+			if options.Delimiter == "" {
+				return nil, fmt.Errorf("delimiter needs to be set if enddelimiter is set")
+			}
+			re := regexp.MustCompile(regexp.QuoteMeta(options.Delimiter) + `(.*?)` + regexp.QuoteMeta(options.EndDelimiter))
+			dv := re.FindAllString(yaml.GetValue(rn), -1)
+			for _, s := range dv {
+				value = append(value, mapper(s))
+			}
+		}
+		if options.Index >= len(value) || options.Index < 0 {
+			return nil, fmt.Errorf("options.index %d is out of bounds for value %s", options.Index, yaml.GetValue(rn))
+		}
+		n := rn.Copy()
+		n.YNode().Value = value[options.Index]
+		return n, nil
+	case "json":
+		value, err := getJsonPathValue(options, yaml.GetValue(rn))
+		if err != nil {
+			return nil, err
+		}
+		n := rn.Copy()
+		n.YNode().Value = value
+		return n, nil
+	default:
+		return rn, nil
 	}
-	n := rn.Copy()
-	n.YNode().Value = value[options.Index]
-	return n, nil
 }
 
 func applyReplacement(nodes []*yaml.RNode, value *yaml.RNode, targetSelectors []*types.TargetSelector) ([]*yaml.RNode, error) {
@@ -243,19 +262,34 @@ func fieldRetrievalError(fieldPath string, isCreate bool) string {
 
 func setFieldValue(options *types.FieldOptions, targetField *yaml.RNode, value *yaml.RNode) error {
 	value = value.Copy()
-	if options != nil && (options.Delimiter != "" || options.FullText != "") {
-		if targetField.YNode().Kind != yaml.ScalarNode {
-			return fmt.Errorf("delimiter option can only be used with scalar nodes")
+
+	if options != nil && options.Format == "json" {
+		if options.FormatPath == "" {
+			return fmt.Errorf("formatPath is empty, %s replacements Format option requires formatPath", options.Format)
 		}
-		v := yaml.GetValue(value)
-		if options.FullText != "" {
-			value.YNode().Value = getByRegex(options.FullText, targetField.YNode().Value, v, options.Index)
-		} else if options.Delimiter != "" && options.EndDelimiter != "" {
-			regex := regexp.QuoteMeta(options.Delimiter) + `(.*?)` + regexp.QuoteMeta(options.EndDelimiter)
-			source := options.Delimiter + v + options.EndDelimiter
-			value.YNode().Value = getByRegex(regex, targetField.YNode().Value, source, options.Index)
-		} else {
-			value.YNode().Value = getByDelimiter(options.Delimiter, targetField.YNode().Value, v, options.Index)
+
+		replacementValue := value.YNode().Value
+		modified, err := getJsonReplacementValue(options, targetField.YNode().Value, replacementValue)
+		if err != nil {
+			return err
+		}
+
+		value.YNode().Value = modified
+	} else {
+		if options != nil && (options.Delimiter != "" || options.FullText != "") {
+			if targetField.YNode().Kind != yaml.ScalarNode {
+				return fmt.Errorf("delimiter option can only be used with scalar nodes")
+			}
+			v := yaml.GetValue(value)
+			if options.FullText != "" {
+				value.YNode().Value = getByRegex(options.FullText, targetField.YNode().Value, v, options.Index)
+			} else if options.Delimiter != "" && options.EndDelimiter != "" {
+				regex := regexp.QuoteMeta(options.Delimiter) + `(.*?)` + regexp.QuoteMeta(options.EndDelimiter)
+				source := options.Delimiter + v + options.EndDelimiter
+				value.YNode().Value = getByRegex(regex, targetField.YNode().Value, source, options.Index)
+			} else {
+				value.YNode().Value = getByDelimiter(options.Delimiter, targetField.YNode().Value, v, options.Index)
+			}
 		}
 	}
 

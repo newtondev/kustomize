@@ -138,6 +138,8 @@ func (p *PathMatcher) doField(rn *RNode) (*RNode, error) {
 	// lookup the field
 	field, err := rn.Pipe(Get(p.Path[0]))
 	if err != nil {
+		isErr := errors.Is(err, &InvalidNodeKindError{})
+		fmt.Println(isErr)
 		if errors.Is(err, &InvalidNodeKindError{}) {
 			fmt.Println(err)
 		}
