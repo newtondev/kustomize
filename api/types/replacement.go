@@ -69,7 +69,7 @@ type TargetSelector struct {
 // FieldOptions refine the interpretation of FieldPaths.
 type FieldOptions struct {
 	// Higher priority than Delimiter, used to replace full text (similar to var)
-	FullText string `string:"fullText,omitempty" yaml:"fullText,omitempty"`
+	FullText string `json:"fullText,omitempty" yaml:"fullText,omitempty"`
 
 	// Used to split/join the field.
 	Delimiter string `json:"delimiter,omitempty" yaml:"delimiter,omitempty"`
