@@ -127,7 +127,7 @@ func getRefinedValue(options *types.FieldOptions, rn *yaml.RNode) (*yaml.RNode, 
 		n.YNode().Value = value[options.Index]
 		return n, nil
 	} else if options.JSONPath != "" {
-		value, err := getJsonPathValue(options, yaml.GetValue(rn))
+		value, err := getJSONPathValue(options, yaml.GetValue(rn))
 		if err != nil {
 			return nil, err
 		}
@@ -273,7 +273,7 @@ func setFieldValue(options *types.FieldOptions, targetField *yaml.RNode, value *
 
 		if options.JSONPath != "" {
 			replacementValue := value.YNode().Value
-			modified, err := getJsonReplacementValue(options, targetField.YNode().Value, replacementValue)
+			modified, err := getJSONReplacementValue(options, targetField.YNode().Value, replacementValue)
 			if err != nil {
 				return err
 			}

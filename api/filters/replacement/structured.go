@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/kustomize/api/types"
 )
 
-func getJsonPathValue(options *types.FieldOptions, jsonValue string) (string, error) {
+func getJSONPathValue(options *types.FieldOptions, jsonValue string) (string, error) {
 	p, err := jsonpointer.New(options.JSONPath)
 	if err != nil {
 		return "", err
@@ -34,7 +34,7 @@ func getJsonPathValue(options *types.FieldOptions, jsonValue string) (string, er
 	return fmt.Sprintf("%v", v), nil
 }
 
-func getJsonReplacementValue(options *types.FieldOptions, jsonValue string, replacementValue string) (string, error) {
+func getJSONReplacementValue(options *types.FieldOptions, jsonValue string, replacementValue string) (string, error) {
 	patchJSON := []byte(`[
 		{"op": "replace", "path": "` + options.JSONPath + `", "value": "` + replacementValue + `"}
 		]`)
