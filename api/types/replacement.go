@@ -75,7 +75,7 @@ type FieldOptions struct {
 	Delimiter string `json:"delimiter,omitempty" yaml:"delimiter,omitempty"`
 
 	// Used to split/join the fieldEnd
-	EndDelimiter string `json:"enddelimiter,omitempty" yaml:"enddelimiter,omitempty"`
+	EndDelimiter string `json:"endDelimiter,omitempty" yaml:"endDelimiter,omitempty"`
 
 	// Which position in the split to consider.
 	Index int `json:"index,omitempty" yaml:"index,omitempty"`

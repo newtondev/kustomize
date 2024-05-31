@@ -112,7 +112,7 @@ func getRefinedValue(options *types.FieldOptions, rn *yaml.RNode) (*yaml.RNode, 
 				return s
 			}
 			if options.Delimiter == "" {
-				return nil, fmt.Errorf("delimiter needs to be set if enddelimiter is set")
+				return nil, fmt.Errorf("delimiter needs to be set if endDelimiter is set")
 			}
 			re := regexp.MustCompile(regexp.QuoteMeta(options.Delimiter) + `(.*?)` + regexp.QuoteMeta(options.EndDelimiter))
 			dv := re.FindAllString(yaml.GetValue(rn), -1)

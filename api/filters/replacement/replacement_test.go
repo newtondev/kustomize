@@ -2903,7 +2903,7 @@ spec:
 `,
 			expectedErr: "unable to find or create field \"spec.tls.5.hosts.5\" in replacement target: index 5 specified but only 0 elements found",
 		},
-		"partial string replacement with enddelimiter in source - replace": {
+		"partial string replacement with endDelimiter in source - replace": {
 			input: `apiVersion: v1
 kind: Deployment
 metadata:
@@ -2937,7 +2937,7 @@ spec:
     fieldPath: spec.template.spec.containers.0.image
     options:
       delimiter: ':'
-      enddelimiter: '.'
+      endDelimiter: '.'
   targets:
   - select:
       kind: Deployment
@@ -2974,7 +2974,7 @@ spec:
         name: postgresdb
 `,
 		},
-		"partial string replacement with enddelimiter in target - replace": {
+		"partial string replacement with endDelimiter in target - replace": {
 			input: `apiVersion: v1
 kind: Deployment
 metadata:
@@ -3016,7 +3016,7 @@ spec:
     - spec.template.spec.containers.1.image
     options:
       delimiter: ':'
-      enddelimiter: '.'
+      endDelimiter: '.'
 `,
 			expected: `apiVersion: v1
 kind: Deployment
@@ -3085,7 +3085,7 @@ spec:
     - spec.template.spec.containers.1.image
     options:
       delimiter: ':'
-      enddelimiter: '.'
+      endDelimiter: '.'
 `,
 			expected: `apiVersion: v1
 kind: Deployment
@@ -3297,7 +3297,7 @@ spec:
     options:
       fullText: 'postgres'
       delimiter: ':'
-      enddelimiter: '.'
+      endDelimiter: '.'
 `,
 			expected: `apiVersion: v1
 kind: Deployment
@@ -3366,7 +3366,7 @@ spec:
     - spec.template.spec.containers.1.image
     options:
       delimiter: ':'
-      enddelimiter: '.'
+      endDelimiter: '.'
 `,
 			expected: `apiVersion: v1
 kind: Deployment
@@ -3505,7 +3505,7 @@ spec:
     - spec.template.spec.containers.1.env.[name=ENDPOINTS].value
     options:
       delimiter: ':'
-      enddelimiter: '/'
+      endDelimiter: '/'
       index: -1
 `,
 			expected: `apiVersion: v1
