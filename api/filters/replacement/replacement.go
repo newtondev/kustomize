@@ -101,12 +101,7 @@ func getRefinedValue(options *types.FieldOptions, rn *yaml.RNode) (*yaml.RNode, 
 		return nil, fmt.Errorf("delimiter option can only be used with scalar nodes")
 	}
 
-	if options.Format == "" && options.Delimiter != "" {
-		options.Format = "delimiter"
-	}
-
-	switch options.Format {
-	case "delimiter":
+	if options.Delimiter != "" {
 		var value []string
 		if options.EndDelimiter == "" {
 			value = strings.Split(yaml.GetValue(rn), options.Delimiter)
@@ -131,7 +126,7 @@ func getRefinedValue(options *types.FieldOptions, rn *yaml.RNode) (*yaml.RNode, 
 		n := rn.Copy()
 		n.YNode().Value = value[options.Index]
 		return n, nil
-	case "json":
+	} else if options.JSONPath != "" {
 		value, err := getJsonPathValue(options, yaml.GetValue(rn))
 		if err != nil {
 			return nil, err
@@ -139,9 +134,17 @@ func getRefinedValue(options *types.FieldOptions, rn *yaml.RNode) (*yaml.RNode, 
 		n := rn.Copy()
 		n.YNode().Value = value
 		return n, nil
-	default:
-		return rn, nil
+	} else if options.YAMLPath != "" {
+		value, err := getYAMLPathValue(options, yaml.GetValue(rn))
+		if err != nil {
+			return nil, err
+		}
+		n := rn.Copy()
+		n.YNode().Value = value
+		return n, nil
 	}
+
+	return rn, nil
 }
 
 func applyReplacement(nodes []*yaml.RNode, value *yaml.RNode, targetSelectors []*types.TargetSelector) ([]*yaml.RNode, error) {
@@ -263,32 +266,40 @@ func fieldRetrievalError(fieldPath string, isCreate bool) string {
 func setFieldValue(options *types.FieldOptions, targetField *yaml.RNode, value *yaml.RNode) error {
 	value = value.Copy()
 
-	if options != nil && options.Format == "json" {
-		if options.FormatPath == "" {
-			return fmt.Errorf("formatPath is empty, %s replacements Format option requires formatPath", options.Format)
+	if options != nil {
+		if options.YAMLPath != "" && options.JSONPath != "" {
+			return fmt.Errorf("specify either yamlPath or jsonPath, not both")
 		}
 
-		replacementValue := value.YNode().Value
-		modified, err := getJsonReplacementValue(options, targetField.YNode().Value, replacementValue)
-		if err != nil {
-			return err
-		}
-
-		value.YNode().Value = modified
-	} else {
-		if options != nil && (options.Delimiter != "" || options.FullText != "") {
-			if targetField.YNode().Kind != yaml.ScalarNode {
-				return fmt.Errorf("delimiter option can only be used with scalar nodes")
+		if options.JSONPath != "" {
+			replacementValue := value.YNode().Value
+			modified, err := getJsonReplacementValue(options, targetField.YNode().Value, replacementValue)
+			if err != nil {
+				return err
 			}
-			v := yaml.GetValue(value)
-			if options.FullText != "" {
-				value.YNode().Value = getByRegex(options.FullText, targetField.YNode().Value, v, options.Index)
-			} else if options.Delimiter != "" && options.EndDelimiter != "" {
-				regex := regexp.QuoteMeta(options.Delimiter) + `(.*?)` + regexp.QuoteMeta(options.EndDelimiter)
-				source := options.Delimiter + v + options.EndDelimiter
-				value.YNode().Value = getByRegex(regex, targetField.YNode().Value, source, options.Index)
-			} else {
-				value.YNode().Value = getByDelimiter(options.Delimiter, targetField.YNode().Value, v, options.Index)
+			value.YNode().Value = modified
+		} else if options.YAMLPath != "" {
+			replacementValue := value.YNode().Value
+			modified, err := getYAMLReplacementValue(options, targetField.YNode().Value, replacementValue)
+			if err != nil {
+				return err
+			}
+			value.YNode().Value = modified
+		} else {
+			if options != nil && (options.Delimiter != "" || options.FullText != "") {
+				if targetField.YNode().Kind != yaml.ScalarNode {
+					return fmt.Errorf("delimiter option can only be used with scalar nodes")
+				}
+				v := yaml.GetValue(value)
+				if options.FullText != "" {
+					value.YNode().Value = getByRegex(options.FullText, targetField.YNode().Value, v, options.Index)
+				} else if options.Delimiter != "" && options.EndDelimiter != "" {
+					regex := regexp.QuoteMeta(options.Delimiter) + `(.*?)` + regexp.QuoteMeta(options.EndDelimiter)
+					source := options.Delimiter + v + options.EndDelimiter
+					value.YNode().Value = getByRegex(regex, targetField.YNode().Value, source, options.Index)
+				} else {
+					value.YNode().Value = getByDelimiter(options.Delimiter, targetField.YNode().Value, v, options.Index)
+				}
 			}
 		}
 	}

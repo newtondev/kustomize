@@ -87,9 +87,11 @@ type FieldOptions struct {
 	// If field missing, add it.
 	Create bool `json:"create,omitempty" yaml:"create,omitempty"`
 
-	// Specify a format of for instance a field that could contain JSON structured data.
-	Format     string `json:"format,omitempty" yaml:"format,omitempty"`
-	FormatPath string `json:"formatPath,omitempty" yaml:"formatPath,omitempty"`
+	// Specify a format and path of a field that contains JSON structured data.
+	JSONPath string `json:"jsonPath,omitempty" yaml:"jsonPath,omitempty"`
+
+	// Specify a format and path of a field that contains YAML structured data.
+	YAMLPath string `json:"yamlPath,omitempty" yaml:"yamlPath,omitempty"`
 }
 
 func (fo *FieldOptions) String() string {

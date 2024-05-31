@@ -1836,6 +1836,39 @@ spec:
     imagePullPolicy: OnFailure
 `,
 		},
+		"replacement contain yamlfield": {
+			input: `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: target-configmap
+data:
+  service.slack: |
+    apiURL: slack-api-url
+    token: slack-api-token
+`,
+			replacements: `replacements:
+- source:
+    kind: ConfigMap
+    name: target-configmap
+    fieldPath: metadata.name
+  targets:
+  - select:
+      kind: ConfigMap
+    fieldPaths:
+    - data.service\.slack
+    options:
+      yamlPath: '/apiURL'
+`,
+			expected: `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: target-configmap
+data:
+  service.slack: |
+    apiURL: target-configmap
+    token: slack-api-token
+    `,
+		},
 		"replacement contain jsonfield": {
 			input: `apiVersion: v1
 kind: ConfigMap
@@ -1861,8 +1894,7 @@ data:
     fieldPaths:
     - data.config\.json
     options:
-      format: 'json'
-      formatPath: '/config/hostname'
+      jsonPath: '/config/hostname'
 `,
 			expected: `apiVersion: v1
 kind: ConfigMap
